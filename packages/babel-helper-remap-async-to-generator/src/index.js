@@ -16,16 +16,14 @@ let buildWrapper = template(`
 
 let arrowBuildWrapper =  template(`
   (() => {
-    var ref = FUNCTION;
-    return (PARAMS) => ref.apply(this, arguments);
+    var ref = FUNCTION, _this = this;
+    return function(PARAMS) {
+      return ref.apply(_this, arguments);
+    };
   })
 `);
 
 let awaitVisitor = {
-  Function(path) {
-    path.skip();
-  },
-
   ArrowFunctionExpression(path) {
     if (!path.node.async) {
       path.arrowFunctionToShadowed();
@@ -89,6 +87,7 @@ function plainFunction(path: NodePath, callId: Object) {
         t.callExpression(container, [])
       )
     ]);
+    declar._blockHoist = true;
 
     retFunction.id = asyncFnId;
     path.replaceWith(declar);
