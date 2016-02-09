@@ -12,26 +12,21 @@ export default function() {
     visitor: {
       ObjectExpression(path) {
         const { node } = path;
-        const plainProps = node
-          .properties
-          .filter(prop => !t.isSpreadProperty(prop) && !prop.computed);
+        const plainProps = node.properties.filter(prop => !t.isSpreadProperty(prop) && !prop.computed);
 
-        const alreadySeenNames = {};
+        const alreadySeenNames = Object.create(null);
 
-        plainProps
-          .filter(prop => {
-            const name = getName(prop.key);
-            if (Object.prototype.hasOwnProperty.call(alreadySeenNames, name)) {
-              return true;
-            } else {
-              alreadySeenNames[name] = true;
-              return false;
-            }
-          })
-          .forEach(prop => {
+        for (let prop of plainProps) {
+          const name = getName(prop.key);
+          if (!alreadySeenNames[name]) {
+            alreadySeenNames[name] = true;
+          } else {
+            // Rely on the computed properties transform to split the property
+            // assignment out of the object literal.
             prop.computed = true;
-            prop.key = t.stringLiteral(getName(prop.key));
-          });
+            prop.key = t.stringLiteral(name);
+          }
+        }
       }
     }
   };
